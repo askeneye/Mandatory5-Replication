@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package distributed_auction;
+option go_package = "distributed_auction/proto";
+
+service Auction {
+    rpc Bid (BidRequest) returns (BidResponse);
+    rpc Result (ResultRequest) returns (ResultResponse);
+}
+
+enum BidOutcome {
+  UNKNOWN = 0;
+  FAIL = 1;
+  SUCCESS = 2;
+  EXCEPTION = 3;
+}
+
+message BidRequest {
+    string bidder = 1;
+    int64 bid = 2;
+    int64 requist_id = 3;
+}
+
+message BidResponse {
+    BidOutcome outcome = 1;
+    string reason = 2;
+}
+
+message ResultRequest {} //void
+
+message ResultResponse {
+    bool over = 1;
+    string bidder = 2;
+    int64 amount = 3;
+}
