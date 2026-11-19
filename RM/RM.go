@@ -23,6 +23,7 @@ type RM struct {
 	mu sync.Mutex
 	state *pb.State
 
+	peerDown []bool
 	peers []pb.AuctionClient
 }
 
@@ -148,9 +149,10 @@ func (rm *RM) replicate() {
 		_, err := peer.Update(ctx, rm.state)
 		cancel()
 
-		if err != nil {
-			log.Printf("[RM %d] Could not update RM %d %v", rm.id, id, err)
+		if err != nil && !rm.peerDown[id] {
+			log.Printf("[RM %d] RM is not answering %d %v", rm.id, id)
 		}
+		rm.peerDown[id] = err != nil
 	}
 }
 
@@ -172,6 +174,7 @@ func (rm *RM) Update(ctx context.Context, in *pb.State) (*pb.Empty, error) {
 func main() {
 
 	rm := &RM{
+		peerDown: make([]bool, len(rmAddrs)),
 		state: &pb.State{
 		EndTime: time.Now().Add(100 * time.Second).UnixMilli(),
 		Bidders: map[string]bool{},

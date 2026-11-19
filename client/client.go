@@ -70,7 +70,7 @@ func (b *bidder) sendBid(req *pb.BidRequest) (*pb.BidResponse, error) {
 		resp, err := b.rms[b.current].Bid(ctx, req)
 		cancel()
 
-		if err != nil && resp.GetOutcome() != pb.BidOutcome_EXCEPTION {
+		if err == nil && resp.GetOutcome() != pb.BidOutcome_EXCEPTION {
 			return resp, nil
 		}
 		b.nextRM()
@@ -99,14 +99,14 @@ func (b *bidder) result() {
 		resp, err := b.rms[b.current].Result(ctx, &pb.ResultRequest{})
 		cancel()
 
-		if err != nil {
+		if err == nil {
 			switch {
 			case resp.GetBidder() == "":
 				fmt.Println("No bids yet")
 			case resp.GetOver():
 				fmt.Printf("Auction is over: %s won with %d\n", resp.GetBidder(), resp.GetAmount())
 			default:
-				fmt.Printf("Auction is ongoing: highest bid is %d by %s, %s\n", resp.GetAmount(), resp.GetBidder(), resp.GetSecondsLeft())
+				fmt.Printf("Auction is ongoing: highest bid is %d by %s, %d seconds left\n", resp.GetAmount(), resp.GetBidder(), resp.GetSecondsLeft())
 			}
 			return
 		}
