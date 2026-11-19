@@ -4,8 +4,9 @@ package distributed_auction;
 option go_package = "distributed_auction/proto";
 
 service Auction {
-    rpc Bid (BidRequest) returns (BidResponse);
-    rpc Result (ResultRequest) returns (ResultResponse);
+    rpc Bid (BidRequest)        returns (BidResponse);      //client -> RM
+    rpc Result (ResultRequest)  returns (ResultResponse);   //client -> RM
+    rpc Update (State)          returns (Empty);            //RM -> RM
 }
 
 enum BidOutcome {
@@ -32,4 +33,15 @@ message ResultResponse {
     bool over = 1;
     string bidder = 2;
     int64 amount = 3;
+    int64 secondsLeft = 4;
 }
+
+message State {
+    int64 highestBid = 1;
+    string highestBidder = 2;
+    map<string, bool> bidders = 3;
+    map<string, int64> lastSucces = 4;
+    int64 endTime = 5;
+}
+
+message Empty {}

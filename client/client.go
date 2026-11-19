@@ -106,7 +106,7 @@ func (b *bidder) result() {
 			case resp.GetOver():
 				fmt.Printf("Auction is over: %s won with %d\n", resp.GetBidder(), resp.GetAmount())
 			default:
-				fmt.Printf("Auction is ongoing: highest bid is %d by %s\n", resp.GetAmount(), resp.GetBidder())
+				fmt.Printf("Auction is ongoing: highest bid is %d by %s, %s\n", resp.GetAmount(), resp.GetBidder(), resp.GetSecondsLeft())
 			}
 			return
 		}
