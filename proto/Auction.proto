@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package distributed_auction;
+option go_package = "distributed_auction/proto";
+
+service Auction {
+    rpc Bid (BidRequest)        returns (BidResponse);      //client -> RM
+    rpc Result (ResultRequest)  returns (ResultResponse);   //client -> RM
+    rpc Update (State)          returns (Empty);            //RM -> RM
+}
+
+enum BidOutcome {
+  UNKNOWN = 0;
+  FAIL = 1;
+  SUCCESS = 2;
+  EXCEPTION = 3;
+}
+
+message BidRequest {
+    string bidder = 1;
+    int64 bid = 2;
+    int64 requist_id = 3;
+}
+
+message BidResponse {
+    BidOutcome outcome = 1;
+    string reason = 2;
+}
+
+message ResultRequest {} //void
+
+message ResultResponse {
+    bool over = 1;
+    string bidder = 2;
+    int64 amount = 3;
+    int64 secondsLeft = 4;
+}
+
+message State {
+    int64 highestBid = 1;
+    string highestBidder = 2;
+    map<string, bool> bidders = 3;
+    map<string, int64> lastSucces = 4;
+    int64 endTime = 5;
+}
+
+message Empty {}
