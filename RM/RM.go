@@ -18,17 +18,16 @@ var rmAddrs = []string{"localhost:50051", "localhost:50052", "localhost:50053"}
 type RM struct {
 	pb.UnimplementedAuctionServer
 
-	id int
+	id     int
 	leader int
-	mu sync.Mutex
-	state *pb.State
+	mu     sync.Mutex
+	state  *pb.State
 
 	peerDown []bool
-	peers []pb.AuctionClient
+	peers    []pb.AuctionClient
 }
 
-
-func (rm *RM) handleBid(req *pb.BidRequest) *pb.BidResponse {	
+func (rm *RM) handleBid(req *pb.BidRequest) *pb.BidResponse {
 	rm.mu.Lock()
 	defer rm.mu.Unlock()
 
@@ -42,7 +41,7 @@ func (rm *RM) handleBid(req *pb.BidRequest) *pb.BidResponse {
 			s.Bidders[name] = true
 			rm.replicate()
 			log.Printf("[RM %d] %s joined", rm.id, name)
-			return  &pb.BidResponse{Outcome: pb.BidOutcome_SUCCESS}
+			return &pb.BidResponse{Outcome: pb.BidOutcome_SUCCESS}
 		}
 	}
 
@@ -50,7 +49,7 @@ func (rm *RM) handleBid(req *pb.BidRequest) *pb.BidResponse {
 		return &pb.BidResponse{Outcome: pb.BidOutcome_FAIL, Reason: "Need to register with name first"}
 	}
 	if s.LastSucces[name] == req.GetRequistId() {
-		return  &pb.BidResponse{Outcome: pb.BidOutcome_SUCCESS}
+		return &pb.BidResponse{Outcome: pb.BidOutcome_SUCCESS}
 	}
 	if time.Now().UnixMilli() > s.EndTime {
 		return &pb.BidResponse{Outcome: pb.BidOutcome_FAIL, Reason: "Auction is over"}
@@ -62,8 +61,8 @@ func (rm *RM) handleBid(req *pb.BidRequest) *pb.BidResponse {
 	s.HighestBid, s.HighestBidder = bid, name
 	s.LastSucces[name] = req.GetRequistId()
 	rm.replicate()
-	log.Printf("[RM %d] new bit is now highest %d by %s", rm.id, s.HighestBid, s.HighestBidder)
-	return  &pb.BidResponse{Outcome: pb.BidOutcome_SUCCESS}
+	log.Printf("[RM %d] new bid is now highest %d by %s", rm.id, s.HighestBid, s.HighestBidder)
+	return &pb.BidResponse{Outcome: pb.BidOutcome_SUCCESS}
 }
 
 func (rm *RM) Bid(ctx context.Context, req *pb.BidRequest) (*pb.BidResponse, error) {
@@ -73,7 +72,7 @@ func (rm *RM) Bid(ctx context.Context, req *pb.BidRequest) (*pb.BidResponse, err
 			return rm.handleBid(req), nil
 		}
 
-		fctx, cancel := context.WithTimeout(context.Background(), time.Second * 2)
+		fctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
 		resp, err := rm.peers[leader].Bid(fctx, req)
 		cancel()
 		if err == nil {
@@ -91,30 +90,30 @@ func (rm *RM) handleResult(req *pb.ResultRequest) *pb.ResultResponse {
 
 	if time.Now().UnixMilli() > s.EndTime {
 		return &pb.ResultResponse{
-			Over: true, 
-			Bidder: s.HighestBidder, 
+			Over:   true,
+			Bidder: s.HighestBidder,
 			Amount: s.HighestBid,
-			}
+		}
 	} else {
 		timeLeft := s.EndTime - time.Now().UnixMilli()
 		return &pb.ResultResponse{
-			Over: false, 
-			Bidder: s.HighestBidder, 
-			Amount: s.HighestBid, 
-			SecondsLeft: max(0, (timeLeft/1000)),
-			}
+			Over:        false,
+			Bidder:      s.HighestBidder,
+			Amount:      s.HighestBid,
+			SecondsLeft: max(0, (timeLeft / 1000)),
+		}
 	}
 
 }
 
 func (rm *RM) Result(ctx context.Context, req *pb.ResultRequest) (*pb.ResultResponse, error) {
-	for{
+	for {
 		leader := rm.getLeader()
 		if leader == rm.id {
 			return rm.handleResult(req), nil
 		}
 
-		fctx, cancel := context.WithTimeout(context.Background(), time.Second * 2)
+		fctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
 		resp, err := rm.peers[leader].Result(fctx, req)
 		cancel()
 		if err == nil {
@@ -170,16 +169,15 @@ func (rm *RM) Update(ctx context.Context, in *pb.State) (*pb.Empty, error) {
 	return &pb.Empty{}, nil
 }
 
-
 func main() {
 
 	rm := &RM{
 		peerDown: make([]bool, len(rmAddrs)),
 		state: &pb.State{
-		EndTime: time.Now().Add(100 * time.Second).UnixMilli(),
-		Bidders: map[string]bool{},
-		LastSucces: map[string]int64{},
-	}}
+			EndTime:    time.Now().Add(100 * time.Second).UnixMilli(),
+			Bidders:    map[string]bool{},
+			LastSucces: map[string]int64{},
+		}}
 
 	var listener net.Listener
 
